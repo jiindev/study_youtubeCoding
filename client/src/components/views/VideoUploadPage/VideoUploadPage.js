@@ -2,6 +2,9 @@ import React, {useState} from 'react'
 import {Typography, Button, Form, message, Input, Icon} from 'antd';
 import Dropzone from 'react-dropzone';
 import Axios from 'axios';
+import {useSelector} from 'react-redux';
+// import { response } from 'express';
+
 const {Title} = Typography;
 const {TextArea} = Input;
 
@@ -19,11 +22,15 @@ const CategoryOptions = [
     {value:4, label:"Sports"},
 ]
 
-const VideoUploadPage = () => {
+const VideoUploadPage = (props) => {
+    const user = useSelector(state=>state.user);
     const [VideoTitle, setVideoTitle] = useState("");
     const [Description, setDescription] = useState("");
     const [Private, setPrivate] = useState(0);
     const [Category, setCategory] = useState("Film & Animation");
+    const [FilePath, setFilePath] = useState("");
+    const [Duration, setDuration] = useState("");
+    const [ThumbnailPath, setThumbnailPath] = useState("");
 
     const onTtitleChange = (e) =>{
         setVideoTitle(e.currentTarget.value);
@@ -38,6 +45,33 @@ const VideoUploadPage = () => {
         setPrivate(e.currentTarget.value)
     }
 
+    const onSubmit = (e)=>{
+        e.preventDefault();
+        console.log('클릭');
+
+        const variable = {
+            writer: user.userData._id,
+            title: VideoTitle,
+            description: Description,
+            privacy: Private,
+            filePath: FilePath,
+            category: Category,
+            duration: Duration,
+            thumbnail: ThumbnailPath,
+        }
+        Axios.post('/api/video/uploadVideo', variable)
+            .then(response=>{
+                if(response.data.success){
+                    message.success('성공적으로 업로드 했습니다.');
+                    setTimeout(()=>{
+                        props.history.push('/');
+                    },3000);
+                }else{
+                    alert('비디오 업로드에 실패 했습니다.');
+                }
+            });
+    }
+
     const onDrop = (files) =>{
         let formData = new FormData;
         const config = {
@@ -50,6 +84,22 @@ const VideoUploadPage = () => {
             .then(response => {
                 if(response.data.success){
                     console.log(response.data);
+                    let variable = {
+                        url:response.data.url,
+                        fileName:response.data.fileName
+                    }
+                    setFilePath(response.data.url);
+                    
+                    Axios.post('/api/video/thumbnail', variable)
+                    .then(response=>{
+                        if(response.data.success){
+                            console.log(response.data);
+                            setDuration(response.data.fileDuration);
+                            setThumbnailPath(response.data.url);
+                        }else {
+                            alert('섬네일 생성에 실패했습니다.');
+                        }
+                    })
                 }else{
                     alert('비디오 업로드를 실패했습니다.');
                 }
@@ -63,7 +113,7 @@ const VideoUploadPage = () => {
                 <Title level={2}>Upload Video</Title>
             </div>
 
-            <Form onSubmit>
+            <Form onSubmit={onSubmit}>
                 <div style={{display:'flex', justifyContent:"space-between"}}>
                     <Dropzone
                     onDrop={onDrop}
@@ -79,9 +129,11 @@ const VideoUploadPage = () => {
                         )}
                     </Dropzone>
                     {/*thumbnail zone */}
-                    <div>
-                        <img src="" alt=""/>
-                    </div>
+                    {ThumbnailPath &&
+                        <div>
+                            <img src={`http://localhost:5000/${ThumbnailPath}`} alt="thumbnail"/>
+                        </div>
+                    }
                 </div>
                 <br/>
                 <br/>
@@ -113,7 +165,7 @@ const VideoUploadPage = () => {
                </select>
                <br/>
                 <br/>
-               <Button type="primary" size="large" onclick>Submit</Button>
+               <Button type="primary" size="large" onClick={onSubmit}>Submit</Button>
             </Form>
         </div>
     )
