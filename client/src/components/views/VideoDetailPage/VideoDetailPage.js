@@ -1,6 +1,7 @@
 import React, {useEffect, useState} from 'react';
 import {Row, Col, List, Avatar} from 'antd';
 import Axios from 'axios';
+import SideVideo from './Sections/SideVideo';
 
 const VideoDetailPage = (props) => {
     const videoId = props.match.params.videoId;
@@ -17,7 +18,7 @@ const VideoDetailPage = (props) => {
                     alert('비디오 정보 가져오는 것을 실패했습니다.');
                 }
             })
-    });
+    },[]);
 
     if(VideoDetail.writer){
         return (
@@ -38,7 +39,7 @@ const VideoDetailPage = (props) => {
                     </div>
                 </Col>
                 <Col lg={6} xs={24}>
-                    Side Videos
+                    <SideVideo/>
                 </Col>
             </Row>
         )
